@@ -9,8 +9,13 @@
   "author": "Rémi Destigny",
   "license": "ISC",
   "dependencies": {
+    "async": "^1.5.2",
+    "cheerio": "^0.20.0",
+    "country-data": "0.0.24",
     "lodash": "^4.11.1",
+    "moment": "^2.13.0",
     "request": "^2.72.0",
+    "string-hash": "^1.1.0",
     "xml2js": "^0.4.16"
   }
 }

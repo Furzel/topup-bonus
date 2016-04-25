@@ -1,4 +1,5 @@
 var xmlParser = require('xml2js').Parser(),
+    _ = require('lodash'),
     request = require('request'),
     config = require('../config.json');
 
@@ -14,7 +15,22 @@ exports.run = function (done) {
       if (!json || !json.rss || !json.rss.channel || !json.rss.channel[0] || !json.rss.channel[0].item)
         return done({message: 'Unexpected json for transferto', source: 'transferto_scraper', status: 'unexpected_json'});
 
-      done(null, json.rss.channel[0].item);
+      var promotions = json.rss.channel[0].item;
+
+      // xml2js puts every field in an array, for simplicity sake we rewrite the object
+      // to avoid writing object.attribute[0] all day long
+      var cleanedPromotions = _(promotions).map(function (promotion) {
+        var cleanedPromotion = {};
+
+        _.each(_.keys(promotion), function (key) {
+          if (promotion[key].length === 1)
+            cleanedPromotion[key] = promotion[key][0];
+        });
+
+        return cleanedPromotion;
+      });
+
+      done(null, cleanedPromotions);
     });
   });
 };
