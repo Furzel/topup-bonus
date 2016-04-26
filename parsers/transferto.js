@@ -25,7 +25,7 @@ exports.run = function (json) {
             }
 
             var dateStart = moment(promotion.dateFrom, dateFormat).unix(),
-                operatorSlug = promotion.operatorName.trim().toLowerCase().replace(' ', '-'),
+                operatorSlug = promotion.operatorName.trim().toLowerCase().replace(/ /g, '-'),
                 countryCode = country[0].alpha2;
 
             return {
@@ -40,7 +40,7 @@ exports.run = function (json) {
               minTopup: minTopup
             };
           })
-          .omitBy(_.isNull)
+          .reject(_.isNull)
           .value();
 };
 

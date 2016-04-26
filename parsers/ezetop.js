@@ -21,9 +21,11 @@ exports.run = function (json) {
               return null;
             }
 
+            var operatorSlug = getOperatorSlug(promotion);
+
             return {
               idHash: stringHash(promotion.id.toString()),
-              operatorSlug: promotion.operator_name.trim().toLowerCase().replace(' ', '-'),
+              operatorSlug: operatorSlug,
               provider: 'ezetop',
               countryCode: promotion.country_code, // should run against our own toCountryCode() to make sure they give us clean input
               dateStart: dates.dateStart,
@@ -33,9 +35,19 @@ exports.run = function (json) {
               minTopup: minTopup
             };
           })
-          .omitBy(_.isNull)
+          .reject(_.isNull)
           .value();
 };
+
+function getOperatorSlug (promotion) {
+  var operatorName = promotion.operator_name.trim().toLowerCase().replace(/[^\w\d]/g, ''),
+      countryName = promotion.country_name.trim().toLowerCase().replace('&', 'and')
+                                                               .replace(/ /g, '-')
+                                                               .replace(/[^\w\d-]/g, '');
+
+
+  return operatorName + '-' + countryName;
+}
 
 function parseDates (promotion) {
   var dateStart = moment(promotion.date_start).unix(),

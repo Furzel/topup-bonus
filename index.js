@@ -1,4 +1,5 @@
 var scrapers = require('./scrapers'),
+    database = require('./database'),
     async = require('async'),
     parsers = require('./parsers');
 
@@ -9,7 +10,9 @@ async.each(['ezetop', 'transferto'], function (target, done) {
     if (err) 
       return done(err);
 
-    promotions = promotions.concat(parsers.parseJSON(target, json));
+    var targetPromotions = parsers.parseJSON(target, json);
+
+    promotions = promotions.concat(targetPromotions);
 
     done();
   });
@@ -19,7 +22,20 @@ async.each(['ezetop', 'transferto'], function (target, done) {
     process.exit(1);
   }
 
-  console.log(JSON.stringify(promotions));
+  database.updatePromotions(promotions);
+
+  database.save(function (err) {
+    if (err) {
+      console.error(err);
+      process.exit(1);
+    }
+
+    console.log('Promotions for Guyane');
+    console.log(database.getPromotionsForCountry('GY'));
+    console.log('#####################');
+    console.log('Promotions for Natcom Haiti');
+    console.log(database.getPromotionsForOperator('HT', 'natcom-haiti'));
+  });
 });
 
 /*
