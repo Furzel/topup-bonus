@@ -35,6 +35,10 @@ async.each(['ezetop', 'transferto'], function (target, done) {
     console.log('#####################');
     console.log('Promotions for Natcom Haiti');
     console.log(database.getPromotionsForOperator('HT', 'natcom-haiti'));
+    console.log('#####################');    
+    console.log('Similar promotions');
+    console.log(database._getSimilarPromotions());
+
   });
 });
 

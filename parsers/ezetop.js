@@ -1,6 +1,6 @@
 var _ = require('lodash'),
-    currencies = require('country-data').currencies,
     cheerio = require('cheerio'),
+    parsingUtils = require('../utils/parsing'),
     stringHash = require('string-hash'),
     moment = require('moment');
 
@@ -32,7 +32,8 @@ exports.run = function (json) {
               dateEnd: dates.dateEnd,
               title: promotion.title_desktop,
               termsAndConditions: promotion.terms, // @WARNING unsafe to display as is
-              minTopup: minTopup
+              minTopup: minTopup,
+              multiplier: parsingUtils.parseMultiplier(promotion.title_desktop)
             };
           })
           .reject(_.isNull)
@@ -71,7 +72,6 @@ function hasEndDate (terms) {
 
     if (dateString.toLowerCase().indexOf('until further notice') !== -1) {
       noEndDate = true;
-      return false; // false cuts the each loop
     }
   }
 
@@ -100,36 +100,5 @@ function getMinTopup (terms) {
       currency: 'N/A'
     };
 
-  // remove whitespace for cleaner regex
-  minTopupString = minTopupString.replace(' ', '');
-
-  // this part should be in an utility module but I'm guessing you already 
-  // have a currency parsing method
-  var currencyMatch = minTopupString.match(/([^\W\d]+)/),
-      currencySymbolMatch = minTopupString.match(/([^\w\d]+)/);
-
-  var topupCurrency = null;
-
-  if (currencyMatch && currencyMatch.length > 1) {
-    topupCurrency = _.find(currencies.all, function (currency) {
-      return currencyMatch[1].indexOf(currency.code) !== -1;    
-    });
-  } else if (currencySymbolMatch && currencySymbolMatch.length > 1) {
-    topupCurrency = _.find(currencies.all, function (currency) {
-      return currencySymbolMatch[1].indexOf(currency.symbol) !== -1;    
-    });
-  }
-
-  if (!topupCurrency) 
-    return null;
-
-  var topupValue = parseFloat(minTopupString.replace(/[^0-9-.]/g, ''));
-
-  if (!topupValue)
-    return null;
-
-  return {
-    value: topupValue,
-    currency: topupCurrency.code
-  };
+  return parsingUtils.parseCurrency(minTopupString);
 }

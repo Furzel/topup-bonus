@@ -1,5 +1,6 @@
 var _ = require('lodash'),
     moment = require('moment'),
+    parsingUtils = require('../utils/parsing'),
     stringHash = require('string-hash'),
     lookup = require('country-data').lookup;
 
@@ -20,9 +21,14 @@ exports.run = function (json) {
             var minTopup = parseMinTopup(promotion);
 
             if (!minTopup) {
-              console.error('ERROR Could not parse minimum topup ' + promotion.denomination, promotion);
+              console.error('ERROR Could not parse minimum topup ' + cleanString(promotion.denomination));
               return null;
             }
+
+            var multiplier = parsingUtils.parseMultiplier(cleanString(promotion.title2));
+
+            if (!multiplier)
+              console.error('Could not parse multiplier ', cleanString(promotion.title2));
 
             var dateStart = moment(promotion.dateFrom, dateFormat).unix(),
                 operatorSlug = promotion.operatorName.trim().toLowerCase().replace(/ /g, '-'),
@@ -37,7 +43,8 @@ exports.run = function (json) {
               dateEnd: moment(promotion.dateTo, dateFormat).unix(),
               title: cleanString(promotion.title2),
               termsAndConditions: cleanString(promotion.description), // @WARNING not safe at all to display as is
-              minTopup: minTopup
+              minTopup: minTopup,
+              multiplier: multiplier
             };
           })
           .reject(_.isNull)
@@ -71,18 +78,11 @@ function parseMinTopup (promotion) {
       value: -1,
       currency: 'N/A'
     };
+    
+  // clean the string before attempting to parse the currency 
+  minTopupString.replace('and up', '');
 
-
-
-  var splitted = minTopupString.split(' ');
-
-  if (!splitted || !splitted[0] || !splitted[1])
-    return null;
-
-  return {
-    value: parseInt(splitted[1], 10),
-    currency: splitted[0]
-  };
+  return parsingUtils.parseCurrency(minTopupString);
 }
 
 function cleanString (str) {

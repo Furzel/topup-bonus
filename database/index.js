@@ -1,6 +1,7 @@
 var data = require('../data/database.json');
 
 var _ = require('lodash'),
+    moment = require('moment'),
     path = require('path'),
     fs = require('fs');
 
@@ -80,6 +81,45 @@ exports.getPromotionsForOperator = function (countryCode, operatorSlug) {
   });
 
   return promotions;
+};
+
+exports._getSimilarPromotions = function () {
+  var similarPromotions = [];
+  _.each(data, function (country) {
+    _.each(country.operators, function (operator) {
+      var ezetop = operator.providers['ezetop'],
+          transferto = operator.providers['transferto'];
+
+      if (!ezetop || !transferto)
+        return;
+
+      _.each(ezetop.promotions, function (ezeTopPromotion) {
+        _.each(transferto.promotions, function (transfertoPromotion) {
+          // this BIG if condition searches for two promotions that are similar with different providers:
+          // - same currency
+          // - active at current date
+          // - both have a multiplier or are special offers without multiplier
+          // We however ignore them if they have the exact same characteristics
+          if (ezeTopPromotion.minTopup.currency === transfertoPromotion.minTopup.currency &&
+              (ezeTopPromotion.dateEnd === null || ezeTopPromotion.dateEnd > moment().unix()) &&
+              (transfertoPromotion.dateEnd === null || transfertoPromotion.dateEnd > moment().unix()) &&
+              ((transfertoPromotion.multiplier === null && ezeTopPromotion.multiplier === null) ||
+               (transfertoPromotion.multiplier !== null && ezeTopPromotion.multiplier !== null)) &&
+              (!(transfertoPromotion.multiplier === ezeTopPromotion.multiplier && 
+                 transfertoPromotion.minTopup.value === ezeTopPromotion.minTopup.value &&
+                 transfertoPromotion.minTopup.currency === ezeTopPromotion.minTopup.currency))) {
+
+            similarPromotions.push({
+              ezetop: ezeTopPromotion.title + ' -- multiplier: ' + ezeTopPromotion.multiplier + ' minTopup: ' + ezeTopPromotion.minTopup.value + ' ' + ezeTopPromotion.minTopup.currency,
+              transferto: transfertoPromotion.title + ' -- multiplier: ' + transfertoPromotion.multiplier + ' minTopup: ' + transfertoPromotion.minTopup.value + ' ' + transfertoPromotion.minTopup.currency
+            });
+          } 
+        });
+      });
+    });
+  });
+
+  return similarPromotions;
 };
 
 exports.save = function (done) {
