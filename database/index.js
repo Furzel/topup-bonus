@@ -19,7 +19,6 @@ exports.updatePromotions = function (promotions) {
   var inserted = 0;
 
   _.each(promotions, function (promotion) {
-    debugger;
     var country = data[promotion.countryCode];
 
     if (!country) {
